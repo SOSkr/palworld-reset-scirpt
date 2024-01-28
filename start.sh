@@ -1,92 +1,71 @@
 #!/bin/bash
 
-# The complete path of PalServer.sh
-PAL_SERVER_SCRIPT_PATH="/home/steam/Steam/steamapps/common/PalServer/PalServer.sh"
+# The name of the container
+PAL_CONTAINER_NAME="palworld-server"
+CONTAINER_ID=$(docker ps --filter name="${CONTAINER_NAME}" --format '{{.ID}}')
 
 # The URL to send the request.
-WECOM_URL="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={wecomkey}"
-IPHONE_URL="https://api.day.app/{barkkey}/PalWorld/"
+DISCORD_URL="https://discord.com/api/webhooks/1201205960362963075/90Q9q15yamGQmXsYnq4gCO2YE4irJurg2vyUjfaU_TPBcyY04f0GLnBaPZwn3HQfAq12"
 
 # Available memory limit (unit: MB), here is 300MB.
-MEM_LIMIT=300
+MEM_LIMIT=50000
 
-
-# The function to start the PalServer.sh script.
-start_pal_server() {
-    # Run PalServer.sh in the background as a steam user.
-    sudo -u steam bash "$PAL_SERVER_SCRIPT_PATH" &
-    echo "PalServer.sh started"
-    send_wechat_message "Start PalServer"
-    send_iphone_message "Start%20PalServer"
-}
+# Maximum execution time to restart, in seconds
+SEC_LIMIT=14400
 
 # Function to send messages to WeCom Bot
-send_wechat_message() {
+send_discord_message() {
     local message=$1
     local json_data=$(cat <<EOF
 {
-    "msgtype": "text",
-    "text": {
-        "content": "$message"
-    }
+  "content": "$message",
+  "username": "PalBot",
+  "avatar_url": "https://tech.palworldgame.com/assets/logo.jpg"
 }
 EOF
 )
 
-    curl -s -w "\n" "$WECOM_URL" \
+    curl -s -w "\n" "$DISCORD_URL" \
         -H 'Content-Type: application/json' \
         -d "$json_data"
-    echo "Message sent to WeChat: $message"
+    echo "Message sent to Discord: $message"
 }
 
-# Function to send messages to iPhone
-send_iphone_message() {
-    local message=$1
-    local icon="?icon=https://ffffourwood.cn/usr/uploads/2023/10/584a5ab299ad6a033021f2c6bd8d7b22.JPG"
-    local url="${IPHONE_URL}${message}${icon}"
-
-    curl -s -w "\n" -G "$url"
-    echo "Message sent to iPhone: $message"
+start_pal_server() {
+    docker exec -it "${CONTAINER_ID}" /usr/bin/rcon-cli "Broadcast El_servidor_se_reiniciara_en_30_segundos."
+    docker exec -it "${CONTAINER_ID}" rcon-cli Save
+    docker exec -it "${CONTAINER_ID}" rcon-cli Shutdown
+    sleep 10
+    docker stop "${CONTAINER_ID}"
+    docker start "${CONTAINER_ID}"
+    echo "$PAL_CONTAINER_NAME" " started"
 }
 
-# Function to check memory and restart.
+# Function to check memory and running time and restart.
 check_and_restart() {
     # Get the available memory of the entire system (unit: MB)
     AVAILABLE_MEM=$(free -m | awk '/^Mem:/{print $7}')
     echo "Available Memory - ${AVAILABLE_MEM}MB..."
-    # If the available memory is below the limit, restart PalServer.sh.
+    # If the available memory is below the limit, restart the server
     if [ "$AVAILABLE_MEM" -lt "$MEM_LIMIT" ]; then
         echo "Memory limit exceeded: Available - ${AVAILABLE_MEM}MB, Limit - ${MEM_LIMIT}MB. Restarting PalServer.sh..."
-        sudo pkill -f PalServer-Linux 2>/dev/null
-        # Send message.
-        send_wechat_message "Memory limit exceeded, kill PalServer-Linux"
-        send_iphone_message "Memory%20limit%20exceeded"
-        sleep 30
+        send_discord_message "Memory limit exceeded: Available - ${AVAILABLE_MEM}MB, Limit - ${MEM_LIMIT}MB. Restarting PalServer.sh..."
         start_pal_server
+    else
+        echo 'Palworld memory is healthy'
+        START=$(docker inspect --format='{{.State.StartedAt}}' "${CONTAINER_ID}")
+        START_TIMESTAMP=$(date --date=$START +%s)
+        STOP_TIMESTAMP=$(date +%s)
+        RUNNING_TIME=$(($STOP_TIMESTAMP-$START_TIMESTAMP))
+        if [ "$RUNNING_TIME" -gt "$SEC_LIMIT" ]; then
+            echo "The maximum execution time was reached, restarting the server"
+            send_discord_message "The maximum execution time was reached, restarting the server"
+            start_pal_server
+        else
+            echo "Execution time: " "${RUNNING_TIME}"
+        fi
     fi
 }
 
-
-# First start PalServer.sh
-start_pal_server
-echo "PalServer started"
-
-# Set up an infinite loop.
-while true; do
-    # Check the memory every minute.
-    check_and_restart
-    sleep 60
-    echo "time interval running..."
-    # Restart PalServer.sh every four hours.
-    # if ((SECONDS >= 14400)); then
-    #     echo "Four hours passed. Restarting PalServer.sh..."
-    #     sudo pkill -f PalServer-Linux 2>/dev/null
-    #     # 发送消息
-    #     send_wechat_message "Four hours passed, restarting PalServer"
-    #     send_iphone_message "Four%20hours%20passed%20restarting%20PalServer"
-    #     sleep 30
-    #     start_pal_server
-    #     # 重置秒表
-    #     SECONDS=0
-    # fi
-done
+echo "Checking server..."
+check_and_restart
