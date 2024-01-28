@@ -5,7 +5,7 @@ PAL_CONTAINER_NAME="palworld-server"
 CONTAINER_ID=$(docker ps --filter name="${CONTAINER_NAME}" --format '{{.ID}}')
 
 # The URL to send the request.
-DISCORD_URL="https://discord.com/api/webhooks/1201205960362963075/90Q9q15yamGQmXsYnq4gCO2YE4irJurg2vyUjfaU_TPBcyY04f0GLnBaPZwn3HQfAq12"
+DISCORD_URL="https://discord.com/api/webhooks/..."
 
 # Available memory limit (unit: MB), here is 300MB.
 MEM_LIMIT=50000
@@ -32,12 +32,12 @@ EOF
 }
 
 start_pal_server() {
-    docker exec -it "${CONTAINER_ID}" /usr/bin/rcon-cli "Broadcast El_servidor_se_reiniciara_en_30_segundos."
+    docker exec -it "${CONTAINER_ID}" /usr/bin/rcon-cli "Broadcast The_server_will_restart_in_30_seconds"
     docker exec -it "${CONTAINER_ID}" rcon-cli Save
     docker exec -it "${CONTAINER_ID}" rcon-cli Shutdown
-    sleep 10
-    docker stop "${CONTAINER_ID}"
-    docker start "${CONTAINER_ID}"
+    sleep 30
+    # docker stop "${CONTAINER_ID}"
+    # docker start "${CONTAINER_ID}"
     echo "$PAL_CONTAINER_NAME" " started"
 }
 
