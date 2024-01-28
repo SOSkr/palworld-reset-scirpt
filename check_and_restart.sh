@@ -8,7 +8,7 @@ CONTAINER_ID=$(docker ps --filter name="${CONTAINER_NAME}" --format '{{.ID}}')
 DISCORD_URL="https://discord.com/api/webhooks/..."
 
 # Available memory limit (unit: MB), here is 300MB.
-MEM_LIMIT=50000
+MEM_LIMIT=300
 
 # Maximum execution time to restart, in seconds
 SEC_LIMIT=14400
