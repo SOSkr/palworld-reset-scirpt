@@ -35,9 +35,8 @@ start_pal_server() {
     docker exec -it "${CONTAINER_ID}" /usr/bin/rcon-cli "Broadcast The_server_will_restart_in_30_seconds"
     docker exec -it "${CONTAINER_ID}" rcon-cli Save
     docker exec -it "${CONTAINER_ID}" rcon-cli Shutdown
-    sleep 30
-    # docker stop "${CONTAINER_ID}"
-    # docker start "${CONTAINER_ID}"
+    sleep 35
+    docker restart "${CONTAINER_ID}"
     echo "$PAL_CONTAINER_NAME" " started"
 }
 
