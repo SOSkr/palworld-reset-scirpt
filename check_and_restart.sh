@@ -8,10 +8,10 @@ CONTAINER_ID=$(docker ps --filter name="${CONTAINER_NAME}" --format '{{.ID}}')
 DISCORD_URL="https://discord.com/api/webhooks/..."
 
 # Available memory limit (unit: MB), here is 300MB.
-MEM_LIMIT=50000
+MEM_LIMIT=300
 
 # Maximum execution time to restart, in seconds
-SEC_LIMIT=14400
+MAX_TIME=14400
 
 # Function to send messages to WeCom Bot
 send_discord_message() {
@@ -35,9 +35,8 @@ start_pal_server() {
     docker exec -it "${CONTAINER_ID}" /usr/bin/rcon-cli "Broadcast The_server_will_restart_in_30_seconds"
     docker exec -it "${CONTAINER_ID}" rcon-cli Save
     docker exec -it "${CONTAINER_ID}" rcon-cli Shutdown
-    sleep 30
-    # docker stop "${CONTAINER_ID}"
-    # docker start "${CONTAINER_ID}"
+    sleep 35
+    docker restart "${CONTAINER_ID}"
     echo "$PAL_CONTAINER_NAME" " started"
 }
 
@@ -57,7 +56,7 @@ check_and_restart() {
         START_TIMESTAMP=$(date --date=$START +%s)
         STOP_TIMESTAMP=$(date +%s)
         RUNNING_TIME=$(($STOP_TIMESTAMP-$START_TIMESTAMP))
-        if [ "$RUNNING_TIME" -gt "$SEC_LIMIT" ]; then
+        if [ "$RUNNING_TIME" -gt "$MAX_TIME" ]; then
             echo "The maximum execution time was reached, restarting the server"
             send_discord_message "The maximum execution time was reached, restarting the server"
             start_pal_server
