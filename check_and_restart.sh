@@ -11,7 +11,7 @@ DISCORD_URL="https://discord.com/api/webhooks/..."
 MEM_LIMIT=300
 
 # Maximum execution time to restart, in seconds
-SEC_LIMIT=14400
+MAX_TIME=14400
 
 # Function to send messages to WeCom Bot
 send_discord_message() {
@@ -57,7 +57,7 @@ check_and_restart() {
         START_TIMESTAMP=$(date --date=$START +%s)
         STOP_TIMESTAMP=$(date +%s)
         RUNNING_TIME=$(($STOP_TIMESTAMP-$START_TIMESTAMP))
-        if [ "$RUNNING_TIME" -gt "$SEC_LIMIT" ]; then
+        if [ "$RUNNING_TIME" -gt "$MAX_TIME" ]; then
             echo "The maximum execution time was reached, restarting the server"
             send_discord_message "The maximum execution time was reached, restarting the server"
             start_pal_server
