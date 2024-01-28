@@ -4,7 +4,7 @@
 > Additionally, validate the running time and if it is more than the setted, will also restart the server.
 
 > [!IMPORTANT]
-> This script was made to work with this XX image and on a Linux server.
+> This script was made to work with this [image](https://github.com/thijsvanloef/palworld-server-docker)  and on a Linux server.
 > however it should be able to work with any other image that enables rcon.
 
 ## Server Requirements
